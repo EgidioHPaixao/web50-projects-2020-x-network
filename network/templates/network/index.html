@@ -1,5 +1,19 @@
 {% extends "network/layout.html" %}
+{% load static %}
 
 {% block body %}
-    TODO
+    <div class="form-group">
+        <form action="{% url 'save_post' %}" method="post">
+            {% csrf_token %}
+            <input class="form-control" type="text" name="content" placeholder="Tell to the world">
+
+            <input type=submit value="Upload">
+        </form>
+        
+    </div>  
+    <div id="posts"></div>
+{% endblock %}
+
+{% block script %}
+    <script src="{% static 'network/index.js' %}"></script>
 {% endblock %}

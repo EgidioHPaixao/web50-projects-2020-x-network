@@ -1,11 +1,12 @@
 from django.contrib.auth import authenticate, login, logout
 from django.db import IntegrityError
-from django.http import HttpResponse, HttpResponseRedirect
+from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import render
 from django.urls import reverse
 
-from .models import User
+from .models import *
 
+from django.contrib.auth.decorators import login_required
 
 def index(request):
     return render(request, "network/index.html")
@@ -53,6 +54,7 @@ def register(request):
         try:
             user = User.objects.create_user(username, email, password)
             user.save()
+            Profile(user=user).save()
         except IntegrityError:
             return render(request, "network/register.html", {
                 "message": "Username already taken."
@@ -61,3 +63,18 @@ def register(request):
         return HttpResponseRedirect(reverse("index"))
     else:
         return render(request, "network/register.html")
+
+@login_required
+def save_post(request):
+    form = Post(content=request.POST['content'])    
+    form.creator = request.user
+    form.save()
+    return index(request)
+
+def load_posts(request):
+    posts = Post.objects.all()
+    return JsonResponse([post.serialize() for post in posts], safe=False)
+
+def profile(request,user_id):
+    profile = Profile.objects.filter(user=user_id).first()
+    return JsonResponse(profile.serialize(),safe=False)
