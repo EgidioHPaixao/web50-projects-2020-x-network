@@ -2,7 +2,7 @@
 {% load static %}
 
 {% block body %}
-    <div class="row justify-content-center">
+    <div id="newPost" class="row justify-content-center">
         <div class="form-group col-6">
             <form action="{% url 'save_post' %}" method="post">
                 {% csrf_token %}
@@ -15,8 +15,24 @@
         </div>  
     </div>
 
-    <div id="profile"></div>
-
+    <div id="profile">
+        <div class="card text-center">
+        <div class="card-header">
+            Following
+            <div id="following-amount"></div>
+        </div>
+        
+        <div class="card-body">
+            <h5 id="profile_username" class="card-title"></h5>
+            <a id="follow-button" type="button" class="btn btn-outline-primary"></a>
+        </div>
+        <div class="card-footer text-muted">
+            followers
+            <div id="followers-amount"></div>
+        </div>
+        
+        </div>
+    </div>
     <div id="posts"></div>
 {% endblock %}
 

@@ -1,20 +1,12 @@
 document.addEventListener('DOMContentLoaded', function() {
-    document.querySelector('#following').addEventListener('click', () => load_followed_posts());
-    load_posts();
+    document.querySelector('#following').addEventListener('click', () => load_posts("/followed"));
+    document.querySelector('#profile').style.display = 'none';      
+    load_posts("");
     
 });
 
-function load_posts() {
-    fetch(`/load`)
-    .then(response => response.json())
-    .then(posts => {
-        document.getElementById('posts').innerHTML="";
-        posts.forEach(post => build_post(post));
-    })
-}
-
-function load_followed_posts() {
-    fetch(`/load/followed`)
+function load_posts(addon) {
+    fetch(`/load${addon}`)
     .then(response => response.json())
     .then(posts => {
         document.getElementById('posts').innerHTML="";
@@ -23,13 +15,29 @@ function load_followed_posts() {
 }
 
 function show_profile(creator_id) {
-    document.querySelector('#posts').style.display = 'none';  
+    console.log(`consultando perfil de ID ${creator_id}`);
+    document.querySelector('#newPost').style.display = 'none';  
+    follow_button = document.getElementById('follow-button'); 
+    follow_button.style.display = 'none';
     document.querySelector('#profile').style.display = 'block';  
-    fetch(`/load`)
+    fetch(`/profile/${creator_id}`)
     .then(response => response.json())
-    .then(posts => {
-        posts.forEach(post => build_post(post));
+    .then(profile => {
+        console.log(profile);
+        document.getElementById('following-amount').innerHTML=profile.following;
+        document.getElementById('followers-amount').innerHTML=profile.followers;
+        document.getElementById('profile_username').innerHTML=profile.profile_username;
+        if(profile.follow_available) {               
+            follow_button.style.display = 'unset'; 
+            if(profile.currently_following) {
+                follow_button.innerHTML = 'Unollow';    
+            } else {
+                follow_button.innerHTML = 'Follow';    
+            }
+            follow_button.addEventListener('click', () => update_follow(creator_id) );
+        }
     })
+    load_posts(`?profile=${creator_id}`);
 }
 
 function build_post(post) {
@@ -102,5 +110,19 @@ function update_like(post) {
             document.getElementById(`like-icon-${post.id}`).className = "icon-heart-empty col-auto";
         }
         document.getElementById(`likes-amount-${post.id}`).innerHTML=response.newAmount;
+    })
+}
+
+function update_follow(profile_id) {
+    fetch(`/profile/${profile_id}/update_follow`)
+    .then(response => response.json())
+    .then(response => {
+        follow_button = document.getElementById('follow-button'); 
+        if (response.newFollower) {
+            follow_button.innerHTML = "Unfollow";
+        } else {
+            follow_button.innerHTML = "Follow";
+        }
+        document.getElementById('followers-amount').innerHTML=response.newAmount;
     })
 }

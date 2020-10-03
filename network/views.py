@@ -81,13 +81,17 @@ def load_followed_posts(request):
 
 
 def load_posts(request): 
-    posts = Post.objects.all()
+    profile = request.GET.get("profile", None)
+    if (profile):
+        posts = Post.objects.filter(creator=profile).all()
+    else:
+        posts = Post.objects.all()     
     posts = posts.order_by("-created_date").all()   
     return JsonResponse([post.serialize(request.user) for post in posts], safe=False)
 
 def profile(request,user_id):
-    profile = Profile.objects.filter(user=user_id).first()
-    return JsonResponse(profile.serialize(request.user),safe=False)    
+    profile = Profile.objects.filter(id=user_id).first()
+    return JsonResponse(profile.serialize(request.user),status=200)
 
 @login_required 
 def update_like(request,post_id):
@@ -101,3 +105,15 @@ def update_like(request,post_id):
         post.likes.add(profile)
     post.save()
     return JsonResponse({"liked": newStatus, "newAmount": post.likes.count()},status=200)
+
+@login_required 
+def update_follow(request,profile_id):
+    profile = Profile.objects.get(id=profile_id)
+    if profile in request.user.get_followed_profiles.all():
+        newStatus = False
+        profile.followers.remove(request.user)
+    else:
+        newStatus = True
+        profile.followers.add(request.user)
+    profile.save()
+    return JsonResponse({"newFollower": newStatus, "newAmount": profile.followers.count()},status=200)
