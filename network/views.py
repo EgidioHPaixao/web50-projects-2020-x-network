@@ -67,14 +67,37 @@ def register(request):
 @login_required
 def save_post(request):
     form = Post(content=request.POST['content'])    
-    form.creator = request.user
+    form.creator = Profile.objects.get(user=request.user)
     form.save()
     return index(request)
 
-def load_posts(request):
+@login_required
+def load_followed_posts(request):
+    followed_profiles = request.user.get_followed_profiles.all()
+    print(followed_profiles)
+    posts = Post.objects.filter(creator__in=followed_profiles).all()
+    posts = posts.order_by("-created_date").all()   
+    return JsonResponse([post.serialize(request.user) for post in posts], safe=False)
+
+
+def load_posts(request): 
     posts = Post.objects.all()
-    return JsonResponse([post.serialize() for post in posts], safe=False)
+    posts = posts.order_by("-created_date").all()   
+    return JsonResponse([post.serialize(request.user) for post in posts], safe=False)
 
 def profile(request,user_id):
     profile = Profile.objects.filter(user=user_id).first()
-    return JsonResponse(profile.serialize(),safe=False)
+    return JsonResponse(profile.serialize(request.user),safe=False)    
+
+@login_required 
+def update_like(request,post_id):
+    profile = Profile.objects.filter(user=request.user).first()
+    post = Post.objects.get(id=post_id)
+    if post in profile.get_all_liked_posts.all():
+        newStatus = False
+        post.likes.remove(profile)
+    else:
+        newStatus = True
+        post.likes.add(profile)
+    post.save()
+    return JsonResponse({"liked": newStatus, "newAmount": post.likes.count()},status=200)
