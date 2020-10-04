@@ -7,7 +7,7 @@
             <form action="{% url 'save_post' %}" method="post">
                 {% csrf_token %}
                 <div class="row">
-                    <input class="col-2" type=submit value="Post it">
+                    <input class="btn btn-primary col-2" type=submit value="Post it">
                     <input class="form-control col-10" type="text" name="content" placeholder="Tell to the world">                    
                 </div>
             </form>

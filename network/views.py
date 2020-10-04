@@ -8,6 +8,8 @@ from .models import *
 
 from django.contrib.auth.decorators import login_required
 
+import json
+
 def index(request):
     return render(request, "network/index.html")
 
@@ -66,9 +68,26 @@ def register(request):
 
 @login_required
 def save_post(request):
-    form = Post(content=request.POST['content'])    
-    form.creator = Profile.objects.get(user=request.user)
-    form.save()
+    if request.method == "POST":
+        form = Post(content=request.POST['content'])    
+        form.creator = Profile.objects.get(user=request.user)
+        form.save()
+    elif request.method == "PUT":
+        data = json.loads(request.body)        
+        post_id = int(data["post_id"])
+        new_content = data["new_content"]
+        post = Post.objects.filter(id=post_id).first()     
+        if post.creator.user != request.user:
+            return HttpResponse(status=401)
+        post.content = new_content
+        post.save()
+        return JsonResponse({
+            "result": True
+        },status=200)
+    else:
+        return JsonResponse({
+                "error": f"request methods supported: POST, GET"
+            }, status=400)
     return index(request)
 
 @login_required

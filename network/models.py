@@ -40,5 +40,6 @@ class Post(models.Model):
             "creator_id": self.creator.id,
             "creator_username": self.creator.user.username,
             "likes": self.likes.count(),
-            "liked": not user.is_anonymous and self in Profile.objects.filter(user=user).first().get_all_liked_posts.all()
+            "liked": not user.is_anonymous and self in Profile.objects.filter(user=user).first().get_all_liked_posts.all(),
+            "editable": self.creator.user == user
         }
