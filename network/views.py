@@ -10,6 +10,8 @@ from django.contrib.auth.decorators import login_required
 
 import json
 
+from django.core.paginator import Paginator
+
 def index(request):
     return render(request, "network/index.html")
 
@@ -24,7 +26,7 @@ def login_view(request):
 
         # Check if authentication successful
         if user is not None:
-            login(request, user)
+            login(request, user)    
             return HttpResponseRedirect(reverse("index"))
         else:
             return render(request, "network/login.html", {
@@ -95,9 +97,7 @@ def load_followed_posts(request):
     followed_profiles = request.user.get_followed_profiles.all()
     print(followed_profiles)
     posts = Post.objects.filter(creator__in=followed_profiles).all()
-    posts = posts.order_by("-created_date").all()   
-    return JsonResponse([post.serialize(request.user) for post in posts], safe=False)
-
+    return paginated_posts(request,posts)
 
 def load_posts(request): 
     profile = request.GET.get("profile", None)
@@ -105,8 +105,18 @@ def load_posts(request):
         posts = Post.objects.filter(creator=profile).all()
     else:
         posts = Post.objects.all()     
-    posts = posts.order_by("-created_date").all()   
-    return JsonResponse([post.serialize(request.user) for post in posts], safe=False)
+    return paginated_posts(request,posts)
+
+def paginated_posts(request,posts):
+    posts = posts.order_by("-created_date").all()  
+    paginator = Paginator(posts,10)
+    page_obj = paginator.get_page(request.GET["page"])
+    return JsonResponse({
+        "posts": [post.serialize(request.user) for post in page_obj],
+        "num_pages": paginator.num_pages
+        }
+        , safe=False)
+
 
 def profile(request,user_id):
     profile = Profile.objects.filter(id=user_id).first()

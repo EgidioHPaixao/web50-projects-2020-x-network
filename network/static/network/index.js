@@ -1,22 +1,78 @@
 document.addEventListener('DOMContentLoaded', function() {
     document.querySelector('#profile').style.display = 'none';
-    load_posts("");
-    document.querySelector('#following').addEventListener('click', () => load_posts("/followed"));          
-    
-    
+    load_posts("",1);
+    if(user_is_logged()){
+        document.querySelector('#following').addEventListener('click', () => load_posts("/followed",1));          
+    } else {
+        document.querySelector('#newPost').addEventListener('click', () => force_login());
+    }    
 });
 
-function load_posts(addon) {
-    fetch(`/load${addon}`)
+function load_posts(addon,page) {
+    
+    fetch(`/load${addon}?page=${page}`)
     .then(response => response.json())
-    .then(posts => {
+    .then(response => {
         document.getElementById('posts').innerHTML="";
-        posts.forEach(post => build_post(post));
+        build_paginator(addon,page,response.num_pages);
+        response.posts.forEach(post => build_post(post));
     })
 }
 
+function build_paginator(addon,page,num_pages) {
+    
+    page_list = document.getElementById('pagination');
+    page_list.innerHTML="";
+
+    const previous = document.createElement('li');
+    if(page==1){
+        previous.className = "page-item disabled";    
+    } else {
+        previous.className = "page-item";    
+        previous.addEventListener('click', () => load_posts(addon,page-1));
+    }        
+    const page_a_previous = document.createElement('a');
+    page_a_previous.className="page-link";
+
+    page_a_previous.href="#";
+    page_a_previous.innerHTML="Previous";
+    previous.append(page_a_previous);    
+    page_list.append(previous);
+    
+    for (let item=1; item<=num_pages; item++) {
+        const page_icon = document.createElement('li');        
+        if(item==page) {
+            page_icon.className = "page-item active";
+        } else {
+            page_icon.className = "page-item";    
+            page_icon.addEventListener('click', () => load_posts(addon,item));
+        }        
+        const page_a = document.createElement('a');
+        page_a.className="page-link";
+        page_a.href="#";
+        page_a.innerHTML=item;
+        page_icon.append(page_a);
+
+        page_list.append(page_icon);
+    }
+    
+    const next = document.createElement('li');        
+    if(page==num_pages){
+        next.className = "page-item disabled";    
+    } else {
+        next.className = "page-item";    
+        next.addEventListener('click', () => load_posts(addon,page+1));
+    }   
+    const page_a_next = document.createElement('a');
+    page_a_next.className="page-link"; 
+    page_a_next.href="#";
+    page_a_next.innerHTML="Next";
+    next.append(page_a_next);
+    page_list.append(next);
+    
+}
+
 function show_profile(creator_id) {
-    console.log(`consultando perfil de ID ${creator_id}`);
     document.querySelector('#newPost').style.display = 'none';  
     follow_button = document.getElementById('follow-button'); 
     follow_button.style.display = 'none';
@@ -24,7 +80,6 @@ function show_profile(creator_id) {
     fetch(`/profile/${creator_id}`)
     .then(response => response.json())
     .then(profile => {
-        console.log(profile);
         document.getElementById('following-amount').innerHTML=profile.following;
         document.getElementById('followers-amount').innerHTML=profile.followers;
         document.getElementById('profile_username').innerHTML=profile.profile_username;
@@ -38,6 +93,7 @@ function show_profile(creator_id) {
             follow_button.addEventListener('click', () => update_follow(creator_id) );
         }
     })
+    window.scrollTo(0,0);
     load_posts(`?profile=${creator_id}`);
 }
 
@@ -75,7 +131,12 @@ function build_post(post) {
         heart_bg="-empty";
     }
     like_icon.className = `icon-heart${heart_bg} col-auto`;
-    like_icon.addEventListener('click', () => update_like(post));
+    if(user_is_logged()) {
+        like_icon.addEventListener('click', () => update_like(post));        
+    } else {
+        like_icon.addEventListener('click', () => force_login());
+    }
+    
     likes_row.append(like_icon);
 
 
@@ -213,3 +274,11 @@ function getCookie(name) {
     const parts = value.split(`; ${name}=`);
     if (parts.length === 2) return parts.pop().split(';').shift();
   }
+
+function user_is_logged() {
+    return getCookie("sessionId")
+}
+
+function force_login() {
+    document.getElementById('login').click();
+}
