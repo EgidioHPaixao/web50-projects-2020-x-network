@@ -1,16 +1,22 @@
 document.addEventListener('DOMContentLoaded', function() {
-    document.querySelector('#profile').style.display = 'none';
-    load_posts("",1);
-    if(user_is_logged()){
-        document.querySelector('#following').addEventListener('click', () => load_posts("/followed",1));          
+    document.querySelector('#profile').style.display = 'none';    
+    window.history.pushState('The Network', 'The Network', 'http://127.0.0.1:8000/');
+    if(user_is_logged){
+        document.getElementById('following').addEventListener('click', () => load_posts("/followed",1));          
     } else {
         document.querySelector('#newPost').addEventListener('click', () => force_login());
     }    
+    load_posts("",1);
 });
 
 function load_posts(addon,page) {
-    
-    fetch(`/load${addon}?page=${page}`)
+    if (addon.includes("?")) {
+        addon+=`&page=${page}`;
+    } else {
+        addon+=`?page=${page}`;
+    }
+    console.log(`access ${addon}`);
+    fetch(`/load${addon}`)
     .then(response => response.json())
     .then(response => {
         document.getElementById('posts').innerHTML="";
@@ -20,7 +26,6 @@ function load_posts(addon,page) {
 }
 
 function build_paginator(addon,page,num_pages) {
-    
     page_list = document.getElementById('pagination');
     page_list.innerHTML="";
 
@@ -86,7 +91,7 @@ function show_profile(creator_id) {
         if(profile.follow_available) {               
             follow_button.style.display = 'unset'; 
             if(profile.currently_following) {
-                follow_button.innerHTML = 'Unollow';    
+                follow_button.innerHTML = 'Unfollow';    
             } else {
                 follow_button.innerHTML = 'Follow';    
             }
@@ -94,7 +99,7 @@ function show_profile(creator_id) {
         }
     })
     window.scrollTo(0,0);
-    load_posts(`?profile=${creator_id}`);
+    load_posts(`?profile=${creator_id}`,1);
 }
 
 function build_post(post) {
@@ -131,7 +136,7 @@ function build_post(post) {
         heart_bg="-empty";
     }
     like_icon.className = `icon-heart${heart_bg} col-auto`;
-    if(user_is_logged()) {
+    if(user_is_logged) {
         like_icon.addEventListener('click', () => update_like(post));        
     } else {
         like_icon.addEventListener('click', () => force_login());
