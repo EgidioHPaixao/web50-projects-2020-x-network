@@ -1,18 +1,19 @@
 document.addEventListener('DOMContentLoaded', function() {
     document.querySelector('#profile').style.display = 'none';    
     window.history.pushState('The Network', 'The Network', 'http://127.0.0.1:8000/');
-    if(user_is_logged){
+    if(document.getElementById('following')) {
         document.getElementById('following').addEventListener('click', () => load_posts("/followed",1));          
     } else {
-        document.querySelector('#newPost').addEventListener('click', () => force_login());
+        document.getElementById('newPost').addEventListener('click', () => force_login());
     }    
     load_posts("",1);
 });
 
-function load_posts(addon,page) {
+function load_posts(addon,page) {        
     if (addon.includes("?")) {
         addon+=`&page=${page}`;
     } else {
+        document.querySelector('#profile').style.display = 'none';
         addon+=`?page=${page}`;
     }
     console.log(`access ${addon}`);
@@ -78,6 +79,7 @@ function build_paginator(addon,page,num_pages) {
 }
 
 function show_profile(creator_id) {
+    load_posts(`?profile=${creator_id}`,1);
     document.querySelector('#newPost').style.display = 'none';  
     follow_button = document.getElementById('follow-button'); 
     follow_button.style.display = 'none';
@@ -99,7 +101,7 @@ function show_profile(creator_id) {
         }
     })
     window.scrollTo(0,0);
-    load_posts(`?profile=${creator_id}`,1);
+    
 }
 
 function build_post(post) {
@@ -136,7 +138,7 @@ function build_post(post) {
         heart_bg="-empty";
     }
     like_icon.className = `icon-heart${heart_bg} col-auto`;
-    if(user_is_logged) {
+    if(document.getElementById('following')) {
         like_icon.addEventListener('click', () => update_like(post));        
     } else {
         like_icon.addEventListener('click', () => force_login());
@@ -279,10 +281,6 @@ function getCookie(name) {
     const parts = value.split(`; ${name}=`);
     if (parts.length === 2) return parts.pop().split(';').shift();
   }
-
-function user_is_logged() {
-    return getCookie("sessionId")
-}
 
 function force_login() {
     document.getElementById('login').click();
